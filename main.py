@@ -1,10 +1,10 @@
 #! python
 
 from scapy.all import *
-from craft_packets import *
 import time
 
-default_dport = 33433
+from craft_packets import *
+from global_config import *
 
 
 def dst_reached(pkt, dst):
@@ -21,26 +21,7 @@ def dst_reached(pkt, dst):
     return False
 
 
-def iffinder(dst_list, dport=default_dport, count=1):
-    """
-    :param dst_list:
-    :param dport:
-    :param count:
-    :return:
-    """
-    c = count
-    while c > 0:
-        pkts = [probe_udp(dst=dst, dport=dport, count=1)[0] for dst in dst_list]
-        ans, unans = sr(pkts, timeout=1, verbose=0)
-        if len(ans) > 0:
-            for r in ans.res:
-                target_ip = r[0].sprintf('%IP.dst%')
-                answer_ip = r[1].sprintf('%IP.src%')
-                print('iffinder:\ttarget_ip=%s\tanswer_ip=%s\n' % (target_ip, answer_ip))
-        c -= 1
-
-
-def ping(dst, proto='icmp', dport=default_dport, count=1):
+def ping(dst, proto='icmp', dport=DefaultDPort, count=1):
     """
     普通版本的ping，即使对目标IP的探测次数>count<大于1，每次也只发送一个探测包
     :param dst: 目的IP
@@ -71,7 +52,7 @@ def ping(dst, proto='icmp', dport=default_dport, count=1):
     return result
 
 
-def traceroute(dst, proto='icmp', dport=default_dport, ttl=range(1, 31)):
+def traceroute(dst, proto='icmp', dport=DefaultDPort, ttl=range(1, 31)):
     if proto.lower() == 'icmp':
         pkts = [probe_icmp(dst=dst, ttl=t)[0] for t in ttl]
     elif proto.lower() == 'tcp':
@@ -96,7 +77,7 @@ def traceroute(dst, proto='icmp', dport=default_dport, ttl=range(1, 31)):
     return result
 
 
-def traceroutefast(dst, proto='icmp', dport=default_dport, ttl=range(1, 31), ostr=True):
+def traceroutefast(dst, proto='icmp', dport=DefaultDPort, ttl=range(1, 31), ostr=True):
     if proto.lower() == 'icmp':
         pkts = [probe_icmp(dst=dst, ttl=t)[0] for t in ttl]
     else:
@@ -141,7 +122,6 @@ if __name__ == "__main__":
     local = ['192.168.1.1', '202.97.85.14', '202.97.37.74']
     for d in local:
         print(ping(d, proto='udp', count=2))
-    iffinder(local, count=4)
 
     # print('====ICMP ping %s\n' % uestc + ping(uestc, proto='icmp', count=4))
     # print('====TCP ping\n' + ping(uestc, proto='tcp', dport=80, count=4))
