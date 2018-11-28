@@ -4,6 +4,8 @@ from scapy.all import *
 from craft_packets import *
 import time
 
+default_dport = 33433
+
 
 def dst_reached(pkt, dst):
     """
@@ -19,9 +21,28 @@ def dst_reached(pkt, dst):
     return False
 
 
-def ping(dst, proto='icmp', dport=54321, count=1):
+def iffinder(dst_list, dport=default_dport, count=1):
     """
-    普通版本的ping，即使探测次数大于1，每次也只发送一个探测包
+    :param dst_list:
+    :param dport:
+    :param count:
+    :return:
+    """
+    c = count
+    while c > 0:
+        pkts = [probe_udp(dst=dst, dport=dport, count=1)[0] for dst in dst_list]
+        ans, unans = sr(pkts, timeout=1, verbose=0)
+        if len(ans) > 0:
+            for r in ans.res:
+                target_ip = r[0].sprintf('%IP.dst%')
+                answer_ip = r[1].sprintf('%IP.src%')
+                print('iffinder:\ttarget_ip=%s\tanswer_ip=%s\n' % (target_ip, answer_ip))
+        c -= 1
+
+
+def ping(dst, proto='icmp', dport=default_dport, count=1):
+    """
+    普通版本的ping，即使对目标IP的探测次数>count<大于1，每次也只发送一个探测包
     :param dst: 目的IP
     :param proto: 协议类型，{icmp, tcp, udp}
     :param dport: 目的端口
@@ -43,14 +64,14 @@ def ping(dst, proto='icmp', dport=54321, count=1):
     for i in range(0, count):
         ans = sr1(pkts[i], timeout=1, verbose=0)
         if ans:
-            ans_ttl = ans.sprintf('%IP.ttl%')
-            result += '%d:\tttl=%s\n' % (i + 1, ans_ttl)
+            ans_str = ans.sprintf('ttl=%IP.ttl%\tanswer_ip=%IP.src%')
+            result += '%d:\t%s\n' % (i + 1, ans_str)
         else:
             result += '%d:\ttime out\n' % (i + 1)
     return result
 
 
-def traceroute(dst, proto='icmp', dport=54321, ttl=range(1, 31)):
+def traceroute(dst, proto='icmp', dport=default_dport, ttl=range(1, 31)):
     if proto.lower() == 'icmp':
         pkts = [probe_icmp(dst=dst, ttl=t)[0] for t in ttl]
     elif proto.lower() == 'tcp':
@@ -75,7 +96,7 @@ def traceroute(dst, proto='icmp', dport=54321, ttl=range(1, 31)):
     return result
 
 
-def traceroutefast(dst, proto='icmp', dport=54321, ttl=range(1, 31), ostr=True):
+def traceroutefast(dst, proto='icmp', dport=default_dport, ttl=range(1, 31), ostr=True):
     if proto.lower() == 'icmp':
         pkts = [probe_icmp(dst=dst, ttl=t)[0] for t in ttl]
     else:
@@ -117,6 +138,10 @@ def rtt_strip(dsts, n_strips=1, inter_gap=100):
 
 if __name__ == "__main__":
     uestc = '202.112.14.178'
+    local = ['192.168.1.1', '202.97.85.14', '202.97.37.74']
+    for d in local:
+        print(ping(d, proto='udp', count=2))
+    iffinder(local, count=4)
 
     # print('====ICMP ping %s\n' % uestc + ping(uestc, proto='icmp', count=4))
     # print('====TCP ping\n' + ping(uestc, proto='tcp', dport=80, count=4))
@@ -126,8 +151,8 @@ if __name__ == "__main__":
     # print('====TCP traceroute\n' + traceroute(uestc, proto='tcp', dport=80, ttl=range(1, 21)))
     # print('====UDP traceroute\n' + traceroute(uestc, proto='udp', ttl=range(1, 21)))
 
-    for h in traceroutefast(uestc, proto='icmp', ttl=range(1, 21), ostr=False):
-        print(h)
+    # for h in traceroutefast(uestc, proto='icmp', ttl=range(1, 21), ostr=False):
+    #     print(h)
 
 
 
