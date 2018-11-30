@@ -36,7 +36,7 @@ def iffinder(dst_list, dport_start=DefaultDPort, dport_constant=False, count=1, 
     """
     ret = dict((dst, []) for dst in dst_list)
     c = 0
-    print('Round:')
+    print('Iffinder round:')
     while c < count:
         print(c + 1)
         dport_delta = 0 if dport_constant else c
@@ -76,7 +76,7 @@ def iffinder(dst_list, dport_start=DefaultDPort, dport_constant=False, count=1, 
 
 if __name__ == "__main__":
     test = ['202.97.85.14', '202.97.37.74', '175.184.246.13', '175.184.246.19']
-    # test = ['202.97.37.74']
+    test = ['171.208.203.73', '171.208.197.141']
     ret = iffinder(test, count=10, stiff=1)
     for d, r in ret.items():
         print(d, ':', r)
