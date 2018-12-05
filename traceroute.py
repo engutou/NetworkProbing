@@ -1,5 +1,6 @@
 #! python
 
+
 from scapy.all import *
 import time
 
@@ -34,7 +35,7 @@ def print_rtpath(rtpath):
         print(s)
 
 
-def traceroute(dst, proto='icmp', dport=DefaultDPort, ttl=range(1, 31), ostr=True):
+def traceroute(dst, proto='icmp', dport=DefaultDPort, ttl=range(1, 31), timeout=1, ostr=True):
     if proto.lower() == 'icmp':
         pkts = [probe_icmp(dst=dst, ttl=t)[0] for t in ttl]
     elif proto.lower() == 'tcp':
@@ -47,7 +48,7 @@ def traceroute(dst, proto='icmp', dport=DefaultDPort, ttl=range(1, 31), ostr=Tru
 
     rtpath = []  # route path
     for i in range(len(ttl)):
-        ans = sr1(pkts[i], timeout=1, verbose=0)
+        ans = sr1(pkts[i], timeout=timeout, verbose=0)
         if ans:
             if not dst_reached(ans, dst):
                 rtpath.append((ttl[i], ans.sprintf('%IP.src%')))
@@ -63,7 +64,7 @@ def traceroute(dst, proto='icmp', dport=DefaultDPort, ttl=range(1, 31), ostr=Tru
     return rtpath
 
 
-def traceroutefast(dst, proto='icmp', dport=DefaultDPort, ttl=range(1, 31), ostr=True):
+def traceroutefast(dst, proto='icmp', dport=DefaultDPort, ttl=range(1, 31), timeout=1, ostr=True):
     if proto.lower() == 'icmp':
         pkts = [probe_icmp(dst=dst, ttl=t)[0] for t in ttl]
     else:
@@ -78,7 +79,7 @@ def traceroutefast(dst, proto='icmp', dport=DefaultDPort, ttl=range(1, 31), ostr
     rtpath = [None] * len(ttl)
     firstEOP = len(ttl)
 
-    ans, _ = sr(pkts, timeout=2, verbose=0)
+    ans, _ = sr(pkts, timeout=timeout, verbose=0)
     if len(ans) > 0:
         for r in ans.res:
             t = int(r[0].sprintf('%IP.ttl%'))
@@ -113,6 +114,6 @@ if __name__ == "__main__":
     for d in test:
         # rtpath = traceroute(d, proto='icmp', ttl=range(1, 21))
         # print(rtpath)
-        rtpath = traceroutefast(d)
+        rtpath = traceroutefast(d, timeout=1)
         print(rtpath)
 
